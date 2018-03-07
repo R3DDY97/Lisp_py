@@ -21,7 +21,7 @@ def bool_parser(lisp_str):
 
 def number_parser(lisp_str):
     lisp_str = lisp_str.strip()
-    re_number = re.match(r'^[+-]?\d+\.?\d* ', lisp_str)
+    re_number = re.match(r'^[+-]?\d+\.?\d*', lisp_str)
     if re_number:
         number, lisp_str = re_number.group(), lisp_str[re_number.end():]
     else:
@@ -52,56 +52,55 @@ def expression_parser(lisp_str):
     lisp_str = lisp_str.strip()
     if not lisp_str:
         return None
-    sub_parsers = [bool_parser, number_parser, symbol_parser]
     exp_list = []
-    while lisp_str[0] != ')':
-        if lisp_str[0] == '(':
-            new_exp = []
-            return new_exp.append(expression_parser(lisp_str[1:]))
-        for sub_parser in sub_parsers:
-            if sub_parser(lisp_str):
-                parsed, lisp_str = sub_parser(lisp_str)
-                exp_list.append(parsed)
-        return exp_list, lisp_str
+    if lisp_str[0] == '(':
+        nested_exp = input_parser(lisp_str)
+        parsed, lisp_str = [nested_exp[0]], nested_exp[1]
+        exp_list.append(parsed)
+
+    sub_parsers = [bool_parser, number_parser, symbol_parser]
+    for sub_parser in sub_parsers:
+        if sub_parser(lisp_str):
+            parsed, lisp_str = sub_parser(lisp_str)
+            exp_list.append(parsed)
+    if lisp_str and lisp_str[0] == ")":
+        return exp_list, lisp_str[1:]
+    return exp_list, lisp_str
 
 def input_parser(lisp_str):
-    # lisp_str = lisp_str.strip()
-    #     lisp_str = lisp_str[1:]
-    # else:
-    #     print("\nsyntax error\n")
-    #     os.sys.exit()
-    # while lisp_str:
+    lisp_str = lisp_str.strip()
+    if lisp_str[0] == "(":
+        parsed_list = []
+        lisp_str = lisp_str[1:]
+    else:
+        print("\nsyntax error\n")
+        os.sys.exit()
 
-    if expression_parser(lisp_str):
-        # expression_parsed, lisp_str = expression_parser(lisp_str)
-        # parsed_list.append(expression_parsed)
-        print(expression_parser(lisp_str))
-    return expression_parser(lisp_str)
-    #     print(parsed_list, lisp_str)
-    # return parsed_list, lisp_str
+    while expression_parser(lisp_str):
+        expression_parsed, lisp_str = expression_parser(lisp_str)
+        parsed_list.extend(expression_parsed)
+    # print(parsed_list, lisp_str)
+    return parsed_list, lisp_str
 
-    # if not lisp_str and parsed_list:
-    #     evaluator(parsed_list)
-#
-# def evaluator(parsed_list):
-#     if parsed_list[0] in ENV:
-#         procedure = parsed_list.pop(0)
-#         pargs = []
-#     if not parsed_list:
-#         return None
-#     for parg in parsed_list:
-#         if isinstance(parsed_list, list):
-#             pargs.append(evaluator(parg))
-#         else:
-#             pargs.append(parg)
-#     print(reduce(procedure, pargs))
-#     return reduce(procedure, pargs)
+def evaluator(parsed_list):
+    if not isinstance(parsed_list, list):
+        return None
+    if parsed_list[0] in ENV.values():
+        procedure = parsed_list.pop(0)
+        pargs = []
+    for parg  in parsed_list:
+        if isinstance(parg, list):
+            pargs.append(evaluator(parg))
+        else:
+            pargs.append(parg)
+    print(reduce(procedure, pargs))
+    return reduce(procedure, pargs)
 
 def main():
     try:
         os.system("clear||cls")
         while True:
-            input_parser(repl())
+            evaluator(input_parser(repl())[0])
     except KeyboardInterrupt:
         print("\n\n\tExiting Lisp interpreter..\n\n")
         os.sys.exit()
