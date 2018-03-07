@@ -54,13 +54,13 @@ def keyword_parser(lisp_str):
     else:
         return None
 
-    if keyword == 'define':
-        re_variable = re.match(r'^\w+', lisp_str)
-        if re_variable:
-            variable, lisp_str = re_variable.group(), lisp_str[re_variable.end():]
-            LOCAL_ENV[variable], lisp_str = number_parser(lisp_str)
-            next_exp = lisp_str.index("(")+1
-            lisp_str = lisp_str[next_exp:].replace(variable, str(LOCAL_ENV[variable]))
+    re_variable = re.match(r'^\w+', lisp_str)
+    if keyword == 'define' and re_variable:
+        variable, lisp_str = re_variable.group(), lisp_str[re_variable.end():]
+    if number_parser(lisp_str):
+        LOCAL_ENV[variable], lisp_str = number_parser(lisp_str)
+        next_exp = lisp_str.index("(")+1
+        lisp_str = lisp_str[next_exp:].replace(variable, str(LOCAL_ENV[variable]))
         print(lisp_str)
         return lisp_str
 
