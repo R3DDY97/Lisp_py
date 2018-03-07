@@ -55,7 +55,7 @@ def expression_parser(lisp_str):
     exp_list = []
     if lisp_str[0] == '(':
         nested_exp = input_parser(lisp_str)
-        parsed, lisp_str = [nested_exp[0]], nested_exp[1]
+        parsed, lisp_str = nested_exp[0], nested_exp[1]
         exp_list.append(parsed)
 
     sub_parsers = [bool_parser, number_parser, symbol_parser]
@@ -79,7 +79,6 @@ def input_parser(lisp_str):
     while expression_parser(lisp_str):
         expression_parsed, lisp_str = expression_parser(lisp_str)
         parsed_list.extend(expression_parsed)
-    # print(parsed_list, lisp_str)
     return parsed_list, lisp_str
 
 def evaluator(parsed_list):
