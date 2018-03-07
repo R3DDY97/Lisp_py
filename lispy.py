@@ -3,7 +3,7 @@
 
 import os
 import re
-# from functools import reduce
+from functools import reduce
 # from collections import deque
 from lisp_repl import repl
 from lisp_globals import lisp_env
@@ -28,9 +28,9 @@ def number_parser(lisp_str):
         return None
     try:
         if isinstance(int(number), int):
-            number = int(lisp_str)
+            number = int(number)
     except ValueError:
-        number = int(lisp_str)
+        number = float(number)
     return number, lisp_str
 
 def symbol_parser(lisp_str):
@@ -42,33 +42,60 @@ def symbol_parser(lisp_str):
         return None
     if symbol in ENV:
         return ENV[symbol], lisp_str
-    # elif symbol in KEY_WORDS:
+    elif symbol in LOCAL_ENV:
+        pass
+    elif symbol in KEY_WORDS:
+        pass
     return None
 
-def expression_parser(parsed_list, lisp_str):
+def expression_parser(lisp_str):
     lisp_str = lisp_str.strip()
-
+    if not lisp_str:
+        return None
+    sub_parsers = [bool_parser, number_parser, symbol_parser]
+    exp_list = []
+    while lisp_str[0] != ')':
+        if lisp_str[0] == '(':
+            new_exp = []
+            return new_exp.append(expression_parser(lisp_str[1:]))
+        for sub_parser in sub_parsers:
+            if sub_parser(lisp_str):
+                parsed, lisp_str = sub_parser(lisp_str)
+                exp_list.append(parsed)
+        return exp_list, lisp_str
 
 def input_parser(lisp_str):
-    lisp_str = lisp_str.strip()
-    if lisp_str[0] == "(":
-        parsed_list = []
-    else:
-        print("\nsyntax error\n")
-        os.sys.exit()
-    return expression_parser(parsed_list, lisp_str)
-
-    # sub_parsers = [expression_parser, bool_parser, number_parser, symbol_parser, ]
-
+    # lisp_str = lisp_str.strip()
+    #     lisp_str = lisp_str[1:]
+    # else:
+    #     print("\nsyntax error\n")
+    #     os.sys.exit()
     # while lisp_str:
-    #     for sub_parser in sub_parsers:
-    #         sub_parsed = sub_parser(lisp_str)
-    #         if sub_parsed:
-    #             parsed, lisp_str = sub_parsed
-    #             parsed_list.append(parsed)
 
+    if expression_parser(lisp_str):
+        # expression_parsed, lisp_str = expression_parser(lisp_str)
+        # parsed_list.append(expression_parsed)
+        print(expression_parser(lisp_str))
+    return expression_parser(lisp_str)
+    #     print(parsed_list, lisp_str)
+    # return parsed_list, lisp_str
 
-
+    # if not lisp_str and parsed_list:
+    #     evaluator(parsed_list)
+#
+# def evaluator(parsed_list):
+#     if parsed_list[0] in ENV:
+#         procedure = parsed_list.pop(0)
+#         pargs = []
+#     if not parsed_list:
+#         return None
+#     for parg in parsed_list:
+#         if isinstance(parsed_list, list):
+#             pargs.append(evaluator(parg))
+#         else:
+#             pargs.append(parg)
+#     print(reduce(procedure, pargs))
+#     return reduce(procedure, pargs)
 
 def main():
     try:
