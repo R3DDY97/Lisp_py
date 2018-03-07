@@ -21,23 +21,22 @@ def bool_parser(lisp_str):
 
 def number_parser(lisp_str):
     lisp_str = lisp_str.strip()
-    re_number = re.match(r'^[+-]?\d+\.?\d*', lisp_str)
+    re_number = re.match(r'^[+-]?\d+\.?\d* ', lisp_str)
     if re_number:
         number, lisp_str = re_number.group(), lisp_str[re_number.end():]
     else:
         return None
     try:
-        if isinstance(int(number), int):
-            number = int(number)
+        parsed_num = int(number) or float(number)
     except ValueError:
-        number = float(number)
-    return number, lisp_str
+        parsed_num = float(number)
+    return parsed_num, lisp_str
 
 def symbol_parser(lisp_str):
     lisp_str = lisp_str.strip()
-    re_symbol = re.match(r'^(\w+|[+-/*%]?)', lisp_str)
+    re_symbol = re.match(r'^(\w+|[+-/*%]?\s)', lisp_str)
     if re_symbol:
-        symbol, lisp_str = re_symbol.group(), lisp_str[re_symbol.end():]
+        symbol, lisp_str = re_symbol.group().strip(), lisp_str[re_symbol.end():].strip()
     else:
         return None
     if symbol in ENV:
@@ -45,8 +44,13 @@ def symbol_parser(lisp_str):
     elif symbol in LOCAL_ENV:
         pass
     elif symbol in KEY_WORDS:
-        pass
+        return symbol, lisp_str
     return None
+
+def keyword_parser(keyword, lisp_str):
+    if keyword == 'define':
+
+
 
 def expression_parser(lisp_str):
     lisp_str = lisp_str.strip()
