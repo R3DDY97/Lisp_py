@@ -10,20 +10,20 @@ from lisp_globals import lisp_env
 
 ENV = lisp_env()
 LOCAL_ENV = {}
-KEY_WORDS = ['define', 'if', 'quote', 'set!', 'lambda']
+LAMBDA_ENV = {}
+# KEY_WORDS = ['define', 'if', 'quote', 'set!', 'lambda']
 
 
 def bool_parser(lisp_str):
     lisp_str = lisp_str.strip()
-    if lisp_str[:2] == "#t" or lisp_str[:2] == "#t":
+    if lisp_str[:2] == "#t" or lisp_str[:2] == "#f":
         return lisp_str[:2], lisp_str[2:]
     return None
 
 def number_parser(lisp_str):
-    lisp_str = lisp_str.strip()
-    re_number = re.match(r'^[+-]?\d+\.?\d*', lisp_str)
+    re_number = re.match(r'^\s*[+-]?\d+\.?\d*', lisp_str)
     if re_number:
-        number, lisp_str = re_number.group(), lisp_str[re_number.end():]
+        number, lisp_str = re_number.group(), lisp_str[re_number.end():].strip()
     else:
         return None
     try:
@@ -33,74 +33,98 @@ def number_parser(lisp_str):
     return parsed_num, lisp_str
 
 def symbol_parser(lisp_str):
-    lisp_str = lisp_str.strip()
-    re_symbol = re.match(r'^(\w+|[+-/*%]?\s)', lisp_str)
+    re_symbol = re.match(r'^\s*\w+|[+-/*%]?\s*', lisp_str)
     if re_symbol:
-        symbol, lisp_str = re_symbol.group().strip(), lisp_str[re_symbol.end():].strip()
+        symbol, lisp_str = re_symbol.group().strip(), lisp_str[re_symbol.end():]
     else:
         return None
     if symbol in ENV:
         return ENV[symbol], lisp_str
     elif symbol in LOCAL_ENV:
         return LOCAL_ENV[symbol], lisp_str
+    elif symbol in LAMBDA_ENV:
+        return LAMBDA_ENV[symbol], lisp_str
     return None
 
-def keyword_parser(lisp_str):
-    lisp_str = lisp_str.strip()
-    re_keyword = re.match(r'^define|lambda|if', lisp_str)
-    if re_keyword:
-        keyword, lisp_str = re_keyword.group(), lisp_str[re_keyword.end():].strip()
-        # print(keyword)
+
+def define_parser(lisp_str):
+    re_define = re.match(r'^\(?\s*define\s*', lisp_str)
+    if re_define:
+        lisp_str = lisp_str[re_define.end():]
+    re_variable = re.match(r'^\s*\w+\s*', lisp_str)
+    if re_variable:
+        variable, lisp_str = re_variable.group().strip(), lisp_str[re_variable.end():].strip()
+    else:
+        return None
+    parsed_number = number_parser(lisp_str)
+    if parsed_number:
+        LOCAL_ENV[variable], lisp_str = parsed_number
+        lisp_str = lisp_str.replace(variable, str(LOCAL_ENV[variable]))
+    return lisp_str
+
+    # parsed_lambda = lambda_parser(lisp_str)
+    # if parsed_lambda:
+    #     LAMBDA_ENV[variable] = parsed_lambda
+        # return lisp_str
+    # print(lisp_str)
+    # input("check")
+    # return lisp_str
+
+def lambda_parser(lisp_str):
+    re_lambda = re.match(r'^\s*\(?\s*lambda\s*', lisp_str)
+    if re_lambda:
+        lisp_str = lisp_str[re_lambda.end():]
     else:
         return None
 
-    re_variable = re.match(r'^\w+', lisp_str)
-    if keyword == 'define' and re_variable:
-        variable, lisp_str = re_variable.group(), lisp_str[re_variable.end():]
-    if number_parser(lisp_str):
-        LOCAL_ENV[variable], lisp_str = number_parser(lisp_str)
-        next_exp = lisp_str.index("(")+1
-        lisp_str = lisp_str[next_exp:].replace(variable, str(LOCAL_ENV[variable]))
-        print(lisp_str)
-        return lisp_str
+    re_larg = re.match(r'^\s*\(\s*\w+\)\s*', lisp_str)
+    if re_larg:
+        larg, lisp_str = re_larg.group().strip()[1:-1], lisp_str[re_larg.end():]
+    else:
+        return None
 
-    elif keyword == 'lambda':
-        pass
+    re_lbody = re.match(r'^\s*\(\s*.*?\s*\)\s*', lisp_str)
+    if re_lbody:
+        lbody, lisp_str = re_lbody.group().strip()[1:-1], lisp_str[re_lbody.end():]
+        parsed_lbody = input_parser(lbody)[0]
+        # LOCAL_ENV[variable] = parsed_body
+        # return lisp_str
+        return larg, parsed_lbody
     return None
 
+def if_parser(lisp_str):
+    pass
 
-def arthmetic_eval(parsed_list):
-    if parsed_list[0] in ENV.values():
-        procedure = parsed_list.pop(0)
-        pargs = []
-    for parg  in parsed_list:
-        if isinstance(parg, list):
-            pargs.append(evaluator(parg))
-        else:
-            pargs.append(parg)
-    return reduce(procedure, pargs)
+
+# def arthmetic_eval(parsed_list):
+#     if parsed_list[0] in ENV.values():
+#         procedure = parsed_list.pop(0)
+#         pargs = []
+#     for parg  in parsed_list:
+#         if isinstance(parg, list):
+#             pargs.append(evaluator(parg))
+#         else:
+#             pargs.append(parg)
+#     return reduce(procedure, pargs)
 
 def expression_parser(lisp_str):
     lisp_str = lisp_str.strip()
     if not lisp_str:
         return None
-
     exp_list = []
-    if lisp_str[0] == '(':
-        nested_exp = input_parser(lisp_str[1:])
-        parsed, lisp_str = nested_exp[0], nested_exp[1]
-        exp_list.append(parsed)
-
     sub_parsers = [bool_parser, number_parser, symbol_parser, ]
     for sub_parser in sub_parsers:
         if sub_parser(lisp_str):
             parsed, lisp_str = sub_parser(lisp_str)
             exp_list.append(parsed)
 
-    if lisp_str and lisp_str[0] == ")":
-        return exp_list, lisp_str[1:]
+    if lisp_str[0] == '(':
+        nested_exp = input_parser(lisp_str)
+        parsed, lisp_str = nested_exp[0], nested_exp[1]
+        exp_list.append(parsed)
 
-    print(exp_list, lisp_str)
+    if lisp_str and lisp_str[0] == ")":
+        lisp_str = lisp_str[1:]
     return exp_list, lisp_str
 
 def input_parser(lisp_str):
@@ -108,31 +132,37 @@ def input_parser(lisp_str):
     if lisp_str[0] == "(":
         lisp_str = lisp_str[1:]
     else:
-        print("\nsyntax error\n")
-        os.sys.exit()
-
+        return None
     parsed_lists = []
-    if keyword_parser(lisp_str):
-        lisp_str = keyword_parser(lisp_str)
-
     while expression_parser(lisp_str):
         expression_parsed, lisp_str = expression_parser(lisp_str)
         parsed_lists.extend(expression_parsed)
-    print(parsed_lists, lisp_str)
+    # print(parsed_lists, lisp_str)
     return parsed_lists, lisp_str
 
-def evaluator(parsed_lists):
-    # for parsed_list in parsed_lists:
-    if parsed_lists:
-        procedure = parsed_lists.pop(0)
-        pargs = []
-    else:
+def lisp_interpreter(lisp_str):
+    if not lisp_str.strip():
         return None
+    lisp_str = lisp_str.strip()
+    if lisp_str in LOCAL_ENV:
+        print(LOCAL_ENV[lisp_str])
+    if define_parser(lisp_str):
+        lisp_str = define_parser(lisp_str)
+    lisp_parsed = input_parser(lisp_str)
+    if lisp_parsed and lisp_parsed[0]:
+        parsed, _ = input_parser(lisp_str)
+        evaluator(parsed)  # evaluating
+    return None
+
+def evaluator(parsed_lists):
+    procedure = parsed_lists.pop(0)
+    pargs = []
     for parg  in parsed_lists:
         if isinstance(parg, list):
             pargs.append(evaluator(parg))
         else:
             pargs.append(parg)
+
     print(reduce(procedure, pargs))
     return reduce(procedure, pargs)
 
@@ -140,7 +170,7 @@ def main():
     try:
         os.system("clear||cls")
         while True:
-            evaluator(input_parser(repl())[0])
+            lisp_interpreter(repl())
     except KeyboardInterrupt:
         print("\n\n\tExiting Lisp interpreter..\n\n")
         os.sys.exit()
