@@ -9,15 +9,17 @@ from lisp_repl import repl
 from lisp_globals import lisp_env
 
 ENV = lisp_env()
-LOCAL_ENV = {}
+# LOCAL_ENV = {}
 LAMBDA_ENV = {}
 # KEY_WORDS = ['define', 'if', 'quote', 'set!', 'lambda']
 
 
 def bool_parser(lisp_str):
     lisp_str = lisp_str.strip()
-    if lisp_str[:2] == "#t" or lisp_str[:2] == "#f":
-        return lisp_str[:2], lisp_str[2:]
+    if lisp_str[:2] == "#t":
+        return True, lisp_str[2:]
+    if lisp_str[:2] == "#f":
+        return False, lisp_str[2:]
     return None
 
 def number_parser(lisp_str):
@@ -40,10 +42,10 @@ def symbol_parser(lisp_str):
         return None
     if symbol in ENV:
         return ENV[symbol], lisp_str
-    elif symbol in LOCAL_ENV:
-        return LOCAL_ENV[symbol], lisp_str
-    elif symbol in LAMBDA_ENV:
-        return LAMBDA_ENV[symbol], lisp_str
+    # elif symbol in LOCAL_ENV:
+    #     return LOCAL_ENV[symbol], lisp_str
+    # elif symbol in LAMBDA_ENV:
+        # return LAMBDA_ENV[symbol], lisp_str
     return None
 
 
@@ -58,17 +60,20 @@ def define_parser(lisp_str):
         return None
     parsed_number = number_parser(lisp_str)
     if parsed_number:
-        LOCAL_ENV[variable], lisp_str = parsed_number
-        lisp_str = lisp_str.replace(variable, str(LOCAL_ENV[variable]))
-    return lisp_str
+        ENV[variable], lisp_str = parsed_number
+        lisp_str = lisp_str.replace(variable, str(ENV[variable]))
 
-    # parsed_lambda = lambda_parser(lisp_str)
-    # if parsed_lambda:
-    #     LAMBDA_ENV[variable] = parsed_lambda
-        # return lisp_str
+    exp_parsed = input_parser(lisp_str)
+    if exp_parsed:
+        ENV[variable], lisp_str = exp_parsed
+        lisp_str = lisp_str.replace(variable, str(ENV[variable]))
+        return lisp_str
+
+    parsed_lambda = lambda_parser(lisp_str)
+    if parsed_lambda:
+        LAMBDA_ENV[variable] = parsed_lambda
     # print(lisp_str)
-    # input("check")
-    # return lisp_str
+    return lisp_str
 
 def lambda_parser(lisp_str):
     re_lambda = re.match(r'^\s*\(?\s*lambda\s*', lisp_str)
@@ -141,11 +146,12 @@ def input_parser(lisp_str):
     return parsed_lists, lisp_str
 
 def lisp_interpreter(lisp_str):
-    if not lisp_str.strip():
-        return None
     lisp_str = lisp_str.strip()
-    if lisp_str in LOCAL_ENV:
-        print(LOCAL_ENV[lisp_str])
+    if not lisp_str:
+        return None
+    if lisp_str in ENV:
+        print(ENV[lisp_str])
+        return None
     if define_parser(lisp_str):
         lisp_str = define_parser(lisp_str)
     lisp_parsed = input_parser(lisp_str)
