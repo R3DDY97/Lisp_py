@@ -61,12 +61,12 @@ def define_parser(lisp_str):
     parsed_number = number_parser(lisp_str)
     if parsed_number:
         ENV[variable], lisp_str = parsed_number
-        lisp_str = lisp_str.replace(variable, str(ENV[variable]))
+        # lisp_str = lisp_str.replace(variable, str(ENV[variable]))
 
-    exp_parsed = input_parser(lisp_str)
+    exp_parsed = lisp_interpreter(lisp_str)
     if exp_parsed:
-        ENV[variable], lisp_str = exp_parsed
-        lisp_str = lisp_str.replace(variable, str(ENV[variable]))
+        ENV[variable] = exp_parsed
+        # lisp_str = lisp_str.replace(variable, str(ENV[variable]))
         return lisp_str
 
     parsed_lambda = lambda_parser(lisp_str)
@@ -101,7 +101,7 @@ def if_parser(lisp_str):
     pass
 
 
-# def arthmetic_eval(parsed_list):
+# def define_expression(parsed_list):
 #     if parsed_list[0] in ENV.values():
 #         procedure = parsed_list.pop(0)
 #         pargs = []
@@ -157,7 +157,7 @@ def lisp_interpreter(lisp_str):
     lisp_parsed = input_parser(lisp_str)
     if lisp_parsed and lisp_parsed[0]:
         parsed, _ = input_parser(lisp_str)
-        evaluator(parsed)  # evaluating
+        return evaluator(parsed)  # evaluating
     return None
 
 def evaluator(parsed_lists):
@@ -168,7 +168,6 @@ def evaluator(parsed_lists):
             pargs.append(evaluator(parg))
         else:
             pargs.append(parg)
-
     print(reduce(procedure, pargs))
     return reduce(procedure, pargs)
 
