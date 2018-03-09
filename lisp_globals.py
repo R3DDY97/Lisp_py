@@ -11,8 +11,12 @@ def lisp_env():
                 "//": operator.floordiv,
                 "/": operator.truediv,
                 "%": operator.mod,
+                "<": operator.lt,
+                ">": operator.gt,
+                ">=": operator.ge,
                 "#t" : True,
                 "#f" :False,
+
                }
     env_dict.update(vars(math))
     return env_dict
