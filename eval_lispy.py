@@ -6,45 +6,32 @@ import re
 from functools import reduce
 # from collections import deque
 from lisp_repl import repl
-from lisp_globals import lisp_env
+from lisp_globals import (lisp_env, eval_comparision)
 
-ENV = lisp_env()
+OP_ENV, MATH_ENV = lisp_env()
 LOCAL_ENV = {}
 # LAMBDA_ENV = {}
 # KEY_WORDS = ['define', 'if', 'quote', 'set!', 'lambda']
 
-Symbol = str              # A Scheme Symbol is implemented as a Python str
-Number = (int, float)     # A Scheme Number is implemented as a Python int or float
-Atom = (Symbol, Number) # A Scheme Atom is a Symbol or Number
-List = list             # A Scheme List is implemented as a Python list
-Exp = (Atom, List)     # A Scheme expression is an Atom or List
-# ENV = dict             # A Scheme environment (defined below)
-                          # is a mapping of {variable: value}
 
-class Procedure(object):
+def Procedure(params, body):
     "A user-defined Scheme procedure."
-    def __init__(self, parms, body):
-        self.parms, self.body = parms, body
+    def __init__(self, params, body):
+        self.params, self.body = params, body
     def __call__(self, *args):
-        LOCAL_ENV[self.parms] = args
+        LOCAL_ENV[self.params] = args
         return lisp_evaluator(self.body)
-
-
 
 def bool_parser(lisp_str):
     lisp_str = lisp_str.strip()
-    if lisp_str[:2] == "#t":
-        return True, lisp_str[2:]
-    if lisp_str[:2] == "#f":
-        return False, lisp_str[2:]
-    return None
-
+    if lisp_str[:2] == "#t" or lisp_str[:2] == "#f":
+        return lisp_str[:2], lisp_str[2:]
 
 def symbol_parser(lisp_str):
-    re_symbol = re.match(r'^\s*\w+|[><+-/*%]?\s*', lisp_str)
+    re_symbol = re.match(r'[^ \t\n\r\f\v()]+', lisp_str)
+    # re_symbol = re.match(r'^\s*[+-]?[\w-]+|[><+-/*%]?\s*', lisp_str)
     if re_symbol:
         symbol, lisp_str = re_symbol.group().strip(), lisp_str[re_symbol.end():]
-        # return re_symbol.group().strip(), lisp_str[re_symbol.end():].strip()
     else:
         return None
     try:
@@ -60,12 +47,10 @@ def expression_parser(lisp_str):
         return None
     exp_list = []
     sub_parsers = [bool_parser, symbol_parser, ]
-    # sub_parsers = [bool_parser, number_parser, symbol_parser, ]
     for sub_parser in sub_parsers:
         sub_parsed = sub_parser(lisp_str)
         if sub_parsed and sub_parsed[0]:
             parsed, lisp_str = sub_parsed
-            # parsed, lisp_str = sub_parser(lisp_str)
             exp_list.append(parsed)
 
     if lisp_str[0] == '(':
@@ -87,7 +72,7 @@ def input_parser(lisp_str):
     while expression_parser(lisp_str):
         expression_parsed, lisp_str = expression_parser(lisp_str)
         parsed_lists.extend(expression_parsed)
-    # print(parsed_lists, lisp_str)
+    print(parsed_lists, lisp_str)
     return parsed_lists, lisp_str
 
 def lisp_interpreter(lisp_str):
@@ -99,70 +84,75 @@ def lisp_interpreter(lisp_str):
         parsed, _ = input_parser(lisp_str)
         # print(parsed)
         return parsed
-    return None
+    # return None
 
 
 def get_value(key):
-    try:
-        if key in ENV:
-            return ENV[key]
-    except KeyError:
-        return LOCAL_ENV[key]
-        # pass
+    value = MATH_ENV.get(key, False) or OP_ENV.get(key, False) or LOCAL_ENV.get(key, False)
+    return value
 
 def lisp_evaluator(parsed):
     if not parsed:
         return None
-    # for parsed in parsed_lists:
-    if isinstance(parsed, Number):
+    # if isinstance(parsed, Number):
+    if isinstance(parsed, float):
         # print(parsed)
         return parsed
-    # if parsed in LOCAL_ENV:
-    #     return LOCAL_ENV[parsed]
-    if isinstance(parsed, str):
-        return get_value(parsed)
-        # return None
-    # if isinstance(parsed, list):
 
-    #     return lisp_evaluator(parsed)
-    if len(parsed) == 1:
-        return lisp_evaluator(parsed[0])
+    if isinstance(parsed, str):
+        # print(get_value(parsed))
+        return get_value(parsed)
 
     operation, *arguments = parsed
     if operation == 'define':
         variable, exp = arguments
-        print(arguments)
+        # print(arguments)
         LOCAL_ENV[variable] = lisp_evaluator(exp)
+        return "OK"
+        # return None
+
     if operation == 'if':
-        test, conseq, alt = arguments
-        return lisp_evaluator(conseq if lisp_evaluator(test) else alt)
+        print(arguments)
+        condition, output, alt_output = arguments
+        return lisp_evaluator(output if lisp_evaluator(condition) else alt_output)
     if operation == 'quote':
         return arguments[0]
     if operation == 'lambda':
-        parameters, body = arguments
+        parameters, body = arguments[0]
         return Procedure(parameters, body)
+    if operation == "range":
+        range_args = [int(i) for i in arguments]
+        return list(reduce(range, range_args))
 
     proc = get_value(operation)
-    if proc:
-        vals = [lisp_evaluator(argument) for argument in arguments]
-        # if len(vals) > 2:
-        print(reduce(proc, vals))
-        return reduce(proc, vals)
+    if operation in ["<", ">", "<=", ">=",]:
+        # arg_list = [lisp_evaluator(argument) for argument in arguments]
+        return OP_ENV[eval_comparision(proc, arguments)]
+
+    if operation in OP_ENV:
+        arg_list = [lisp_evaluator(argument) for argument in arguments]
+        # print(reduce(proc, arg_list))
+        return reduce(proc, arg_list)
+    if operation in MATH_ENV and len(arguments) == 1:
+        # print(proc(lisp_evaluator(arguments[0])))
+        return proc(lisp_evaluator(arguments[0]))
     return None
-    # print(proc(*vals))
-    # return proc(*vals)
 
 
 def main():
     try:
         os.system("clear||cls")
         while True:
-            lisp_evaluator(lisp_interpreter(repl()))
-            # lisp_interpreter(repl())
+            output = lisp_evaluator(lisp_interpreter(repl()))
+            if output:
+                print(output)
+            else:
+                print("\nsyntax error\n")
     except KeyboardInterrupt:
         print("\n\n\tExiting Lisp interpreter..\n\n")
+    except:
+        print("\nSyntax error\n")
         os.sys.exit()
-        print("\nInput error\n")
 
 if __name__ == '__main__':
     main()
