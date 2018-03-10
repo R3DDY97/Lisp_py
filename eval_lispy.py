@@ -10,7 +10,7 @@ from lisp_globals import (lisp_env, eval_comparision)
 
 OP_ENV, MATH_ENV = lisp_env()
 LOCAL_ENV = {}
-# LAMBDA_ENV = {}
+LAMBDA_ENV = {}
 # KEY_WORDS = ['define', 'if', 'quote', 'set!', 'lambda']
 
 
@@ -34,8 +34,13 @@ def symbol_parser(lisp_str):
         symbol, lisp_str = re_symbol.group().strip(), lisp_str[re_symbol.end():]
     else:
         return None
+
     try:
         symbol = float(symbol)
+    except ValueError:
+        pass
+    try:
+        symbol = int(symbol)
     except ValueError:
         pass
     return symbol, lisp_str
@@ -72,7 +77,7 @@ def input_parser(lisp_str):
     while expression_parser(lisp_str):
         expression_parsed, lisp_str = expression_parser(lisp_str)
         parsed_lists.extend(expression_parsed)
-    print(parsed_lists, lisp_str)
+    # print(parsed_lists, lisp_str)
     return parsed_lists, lisp_str
 
 def lisp_interpreter(lisp_str):
@@ -94,8 +99,9 @@ def get_value(key):
 def lisp_evaluator(parsed):
     if not parsed:
         return None
-    # if isinstance(parsed, Number):
-    if isinstance(parsed, float):
+    number = (int, float)
+    if isinstance(parsed, number):
+    # if isinstance(parsed, float):
         # print(parsed)
         return parsed
 
@@ -111,6 +117,7 @@ def lisp_evaluator(parsed):
         return "OK"
         # return None
 
+    print(arguments)
     if operation == 'if':
         print(arguments)
         condition, output, alt_output = arguments
@@ -126,12 +133,13 @@ def lisp_evaluator(parsed):
 
     proc = get_value(operation)
     if operation in ["<", ">", "<=", ">=",]:
-        # arg_list = [lisp_evaluator(argument) for argument in arguments]
-        return OP_ENV[eval_comparision(proc, arguments)]
+        arg_list = [lisp_evaluator(argument) for argument in arguments]
+        return OP_ENV[eval_comparision(proc, arg_list)]
 
     if operation in OP_ENV:
         arg_list = [lisp_evaluator(argument) for argument in arguments]
-        # print(reduce(proc, arg_list))
+        print(arg_list)
+        print(reduce(proc, arg_list))
         return reduce(proc, arg_list)
     if operation in MATH_ENV and len(arguments) == 1:
         # print(proc(lisp_evaluator(arguments[0])))
