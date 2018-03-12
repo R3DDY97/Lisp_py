@@ -17,27 +17,14 @@ def lisp_env():
                      "<=": operator.le,
                      "^" : operator.pow,
                      "pow":operator.pow,
+                     "expt":operator.pow,
                      "#t" : True,
                      "#f" :False,
                      True:"#t",
                      False:"#f",
                     }
 
-    math_dict = vars(math)
-    return operator_dict, math_dict
-
-def eval_comparision(proc, arg_list):
-    # print(len(arg_list))
-    # print(arg_list)
-    if len(arg_list) < 2:
-        print("\nSyntax Error\n")
-        return None
-    pre_index = 0
-    post_index = 1
-    while post_index < len(arg_list):
-        status = proc(arg_list[pre_index], arg_list[post_index])
-        if status:
-            post_index += 1
-        else:
-            pre_index, post_index = post_index, post_index+1
-    return status
+    math_dict, both_dict = vars(math), vars(math)
+    both_dict.update(operator_dict)
+    # return operator_dict, math_dict
+    return both_dict, operator_dict, math_dict
