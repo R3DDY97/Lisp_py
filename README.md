@@ -15,3 +15,5 @@ Lisp interpreter using Python
 * `$cd Lisp_py`
 
 * `$python3 lisp_interpreter.py`
+        or
+* `$python3 lispy_v2.py`
