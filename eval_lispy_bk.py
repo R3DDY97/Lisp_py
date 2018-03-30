@@ -25,13 +25,13 @@ def Procedure(params, body):
 def bool_parser(lisp_str):
     lisp_str = lisp_str.strip()
     if lisp_str[:2] == "#t" or lisp_str[:2] == "#f":
-        return lisp_str[:2], lisp_str[2:]
+        return lisp_str[:2], lisp_str[2:].strip()
 
 def symbol_parser(lisp_str):
     re_symbol = re.match(r'[^ \t\n\r\f\v()]+', lisp_str)
     # re_symbol = re.match(r'^\s*[+-]?[\w-]+|[><+-/*%]?\s*', lisp_str)
     if re_symbol:
-        symbol, lisp_str = re_symbol.group().strip(), lisp_str[re_symbol.end():]
+        symbol, lisp_str = re_symbol.group().strip(), lisp_str[re_symbol.end():].strip()
     else:
         return None
 
@@ -52,20 +52,19 @@ def expression_parser(lisp_str):
         return None
     exp_list = []
     sub_parsers = [bool_parser, symbol_parser, ]
-    for sub_parser in sub_parsers:
-        sub_parsed = sub_parser(lisp_str)
-        if sub_parsed and sub_parsed[0]:
-            parsed, lisp_str = sub_parsed
+    while lisp_str and lisp_str.strip()[0] != ")":
+        for sub_parser in sub_parsers:
+            sub_parsed = sub_parser(lisp_str)
+            if sub_parsed and sub_parsed[0]:
+                parsed, lisp_str = sub_parsed
+                exp_list.append(parsed)
+
+        if lisp_str[0] == '(':
+            nested_exp = expression_parser(lisp_str[1:])
+            parsed, lisp_str = nested_exp[0], nested_exp[1].strip()
             exp_list.append(parsed)
+    return exp_list, lisp_str[1:]
 
-    if lisp_str[0] == '(':
-        nested_exp = input_parser(lisp_str)
-        parsed, lisp_str = nested_exp[0], nested_exp[1]
-        exp_list.append(parsed)
-
-    if lisp_str and lisp_str[0] == ")":
-        lisp_str = lisp_str[1:]
-    return exp_list, lisp_str
 
 def input_parser(lisp_str):
     lisp_str = lisp_str.strip()
@@ -76,8 +75,9 @@ def input_parser(lisp_str):
     parsed_lists = []
     while expression_parser(lisp_str):
         expression_parsed, lisp_str = expression_parser(lisp_str)
-        parsed_lists.extend(expression_parsed)
-    # print(parsed_lists, lisp_str)
+        if expression_parsed:
+            parsed_lists.extend(expression_parsed)
+    print(parsed_lists, lisp_str)
     return parsed_lists, lisp_str
 
 def lisp_interpreter(lisp_str):
@@ -89,7 +89,6 @@ def lisp_interpreter(lisp_str):
         parsed, _ = input_parser(lisp_str)
         # print(parsed)
         return parsed
-    # return None
 
 
 def get_value(key):
@@ -101,21 +100,16 @@ def lisp_evaluator(parsed):
         return None
     number = (int, float)
     if isinstance(parsed, number):
-    # if isinstance(parsed, float):
-        # print(parsed)
         return parsed
 
     if isinstance(parsed, str):
-        # print(get_value(parsed))
         return get_value(parsed)
 
     operation, *arguments = parsed
     if operation == 'define':
         variable, exp = arguments
-        # print(arguments)
         LOCAL_ENV[variable] = lisp_evaluator(exp)
         return "OK"
-        # return None
 
     print(arguments)
     if operation == 'if':
@@ -125,7 +119,7 @@ def lisp_evaluator(parsed):
     if operation == 'quote':
         return arguments[0]
     if operation == 'lambda':
-        parameters, body = arguments[0]
+        parameters, body = arguments
         return Procedure(parameters, body)
     if operation == "range":
         range_args = [int(i) for i in arguments]
@@ -144,6 +138,9 @@ def lisp_evaluator(parsed):
     if operation in MATH_ENV and len(arguments) == 1:
         # print(proc(lisp_evaluator(arguments[0])))
         return proc(lisp_evaluator(arguments[0]))
+        # arg1, arg2 = [lisp_evaluator(argument) for argument in arguments]
+        # print(proc(lisp_evaluator(arguments[0])))
+        # return proc(lisp_evaluator(arg_list))
     return None
 
 
@@ -158,9 +155,9 @@ def main():
                 print("\nsyntax error\n")
     except KeyboardInterrupt:
         print("\n\n\tExiting Lisp interpreter..\n\n")
-    except:
-        print("\nSyntax error\n")
-        os.sys.exit()
+    # except:
+    #     print("\nSyntax error\n")
+    #     os.sys.exit()
 
 if __name__ == '__main__':
     main()

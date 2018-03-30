@@ -4,6 +4,9 @@
 import os
 from lisp_parsing import lisp_parser
 from lisp_evaluation import lisp_evaluator
+from lisp_globals import lisp_env
+env, OP_ENV, MATH_ENV = lisp_env()
+
 
 def lisp_interpreter(lisp_str):
     lisp_str = lisp_str.strip()
@@ -12,7 +15,7 @@ def lisp_interpreter(lisp_str):
     lisp_parsed = lisp_parser(lisp_str)
     if lisp_parsed and lisp_parsed[0]:
         parsed, _ = lisp_parsed
-        return lisp_evaluator(parsed)
+        return lisp_evaluator(parsed, env)
         # print(parsed)
         # return parsed
     return None
@@ -23,6 +26,9 @@ def main():
         while True:
             lisp_input = input("Lisp repl> ")
             output = lisp_interpreter(lisp_input)
+            bools = {False:"#t", True:"#t"}
+            if output in bools:
+                print(bools[output])
             # if output:
             print(output)
             # else:

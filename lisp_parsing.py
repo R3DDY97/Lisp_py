@@ -12,8 +12,20 @@ def symbol_parser(lisp_str):
     re_symbol = re.match(r'[^ \t\n\r\f\v()]+', lisp_str)
     if re_symbol:
         symbol, lisp_str = re_symbol.group().strip(), lisp_str[re_symbol.end():].strip()
+        # return symbol, lisp_str
+        try:
+            symbol = int(symbol)
+            return symbol, lisp_str
+        except ValueError:
+            pass
+        try:
+            symbol = float(symbol)
+            return symbol, lisp_str
+        except ValueError:
+            pass
         return symbol, lisp_str
     return None
+
 
 def expression_parser(lisp_str):
     lisp_str = lisp_str.strip()
