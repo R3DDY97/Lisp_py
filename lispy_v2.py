@@ -23,9 +23,10 @@ def eval_comparision(operation, arguments, env):
     while post_index < len(arg_list):
         status = procedure(arg_list[pre_index], arg_list[post_index])
         if status:
-            post_index += 1
-        else:
             pre_index, post_index = post_index, post_index+1
+        # else:
+        #     pre_index, post_index = post_index, post_index+1
+
     return bool_dict[status]
 
 
